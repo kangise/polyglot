@@ -42,9 +42,16 @@ To uninstall: `./uninstall.sh`
 
 ## Use
 
-1. Select some text in any app.
-2. Press **`⌥⌘T`** (Option + Command + T).
-3. The selection gets replaced.
+Two ways, pick whichever fits the moment:
+
+**`⌥⌘T` — quick replace.** Select text anywhere, hit the hotkey, it's replaced.
+
+**`⌥⌘D` — draft with review.** Place your cursor in the paragraph you're writing (no selection needed). A floating panel shows the rewrite with a word-level diff. Press `⌘↩` to accept, `Esc` to dismiss, or click *Retry* for a fresh try.
+
+- **CJK input** → translated to natural business English
+- **English input** → rewritten into idiomatic, native-sounding English
+
+`⌥⌘D` works best in native macOS apps (Mail, Notes, Messages, Safari text fields). In Electron apps where the text field isn't exposed to Accessibility (Slack, VS Code, Notion), it automatically falls back to your current selection.
 
 Click the `🌐` menu bar icon to change the API key, change the model, or quit.
 
@@ -52,7 +59,8 @@ Click the `🌐` menu bar icon to change the API key, change the model, or quit.
 
 | Setting  | Default       | Where it lives |
 | -------- | ------------- | ---------------------- |
-| Hotkey   | `⌥⌘T`         | Hardcoded — see `AppDelegate.swift` |
+| `⌥⌘T`    | Replace selection   | Hardcoded |
+| `⌥⌘D`    | Draft with diff panel | Hardcoded |
 | Model    | `gpt-4o-mini` | `UserDefaults` (menu: "Set Model…") |
 | API key  | *(unset)*     | Keychain, service `com.swifttranslate.app` |
 
@@ -85,12 +93,15 @@ Source map:
 
 ```
 Sources/SwiftTranslate/
-  main.swift              App entry
-  AppDelegate.swift       Menu bar + orchestration
-  HotKeyManager.swift     Global hotkey via Carbon's RegisterEventHotKey
-  SelectionIO.swift       Read / replace selection via synthetic ⌘C / ⌘V
-  TranslationEngine.swift CJK vs English routing + OpenAI call
-  Settings.swift          Keychain + UserDefaults
+  main.swift                App entry
+  AppDelegate.swift         Menu bar + orchestration
+  HotKeyManager.swift       Multi-hotkey registration via Carbon
+  SelectionIO.swift         Read / replace selection via synthetic ⌘C / ⌘V
+  AccessibilityReader.swift Read / replace the focused paragraph via AX API
+  SuggestionPanel.swift     Floating diff panel for ⌥⌘D
+  DiffRenderer.swift        Word-level LCS diff, colored NSAttributedString
+  TranslationEngine.swift   CJK vs English routing + OpenAI call
+  Settings.swift            Keychain + UserDefaults
 ```
 
 ## Limitations
