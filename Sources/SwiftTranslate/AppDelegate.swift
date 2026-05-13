@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        setupMainMenu()
         setupStatusItem()
         ensureAccessibility()
         ensureAPIKey()
@@ -44,6 +45,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - Menu bar
+
+    /// Menu bar apps (LSUIElement) don't get a default Edit menu, which breaks
+    /// ⌘C / ⌘V / ⌘X / ⌘A in alerts and panels. Install a minimal main menu
+    /// so standard editing shortcuts dispatch correctly.
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appMenuItem = NSMenuItem()
+        mainMenu.addItem(appMenuItem)
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "Quit",
+                        action: #selector(NSApp.terminate(_:)),
+                        keyEquivalent: "q")
+        appMenuItem.submenu = appMenu
+
+        let editMenuItem = NSMenuItem()
+        mainMenu.addItem(editMenuItem)
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Undo",
+                         action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: "Redo",
+                         action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "Cut",
+                         action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: "Copy",
+                         action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: "Paste",
+                         action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Select All",
+                         action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editMenuItem.submenu = editMenu
+
+        NSApp.mainMenu = mainMenu
+    }
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -190,19 +226,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Settings prompts
 
+    private var apiKeyWindow: APIKeyWindowController?
+
     @objc private func promptForAPIKey() {
-        let alert = NSAlert()
-        alert.messageText = "OpenAI API Key"
-        alert.informativeText = "Paste your key (sk-...). Stored in Keychain."
-        let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
-        field.stringValue = Settings.apiKey ?? ""
-        alert.accessoryView = field
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
-        NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
-            Settings.apiKey = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let current = Settings.apiKey ?? ""
+        let controller = APIKeyWindowController(initial: current) { key in
+            Settings.apiKey = key
         }
+        apiKeyWindow = controller
+        controller.present()
     }
 
     @objc private func promptForModel() {
