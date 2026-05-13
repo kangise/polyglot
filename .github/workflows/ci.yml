@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: swift build (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build (debug)
+        run: swift build
+
+      - name: Build (release)
+        run: swift build -c release
+
+      - name: Upload release binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-translate-${{ github.sha }}
+          path: .build/release/swift-translate
+          if-no-files-found: error
