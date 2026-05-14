@@ -96,6 +96,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                 action: #selector(draftSuggestion),
                                 keyEquivalent: ""))
         menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Open Accessibility Settings…",
+                                action: #selector(openAccessibilitySettings),
+                                keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Set OpenAI API Key…",
                                 action: #selector(promptForAPIKey),
                                 keyEquivalent: ""))
@@ -258,6 +261,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func ensureAccessibility() {
         let opts: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         _ = AXIsProcessTrustedWithOptions(opts)
+    }
+
+    @objc private func openAccessibilitySettings() {
+        // Trigger a permission prompt first (no-op if already granted),
+        // then jump to the right pane in System Settings.
+        ensureAccessibility()
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     private func ensureAPIKey() {
